@@ -8,10 +8,14 @@ use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Date;
+use PhpParser\Node\Stmt\TryCatch;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class EventsController extends BaseController
 {
-    public function getWarmupEvents() {
+    public function getWarmupEvents()
+    {
         return Event::all();
     }
 
@@ -100,8 +104,16 @@ class EventsController extends BaseController
     ]
      */
 
-    public function getEventsWithWorkshops() {
-        throw new \Exception('implement in coding task 1');
+    public function getEventsWithWorkshops()
+    {
+        try {
+            $events = Event::with('workshops')->get();
+            if ($events)
+                return $this->sendResponse($events, "Events listing");
+            return $this->sendError("No record Found");
+        } catch (\Exception $th) {
+            return $this->sendError($th->getMessage());
+        }
     }
 
 
@@ -178,7 +190,30 @@ class EventsController extends BaseController
     ```
      */
 
-    public function getFutureEventsWithWorkshops() {
-        throw new \Exception('implement in coding task 2');
+    public function getFutureEventsWithWorkshops()
+    {
+        try {
+
+            $events = Event::with([
+                'workshops' => function ($query) {
+                    $query->where('start', '>', now());
+                }
+            ])
+                ->whereExists(function (Builder $query) {
+                    $query->select(DB::raw(1))
+                        ->from('workshops')
+                        ->whereColumn('events.id', 'workshops.event_id')
+                        ->where('start', '>', now())
+                        ->limit(1);
+                })
+                ->get();
+            if ($events)
+                return $this->sendResponse($events, "Events listing");
+
+            return $this->sendError("No record Found");
+
+        } catch (\Exception $th) {
+            return $this->sendError($th->getMessage());
+        }
     }
 }

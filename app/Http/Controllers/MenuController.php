@@ -92,7 +92,20 @@ class MenuController extends BaseController
     ]
      */
 
-    public function getMenuItems() {
-        throw new \Exception('implement in coding task 3');
+    public function getMenuItems()
+    {
+
+        try {
+
+            $menuItems = MenuItem::getMenuItems();
+            if ($menuItems)
+                return $this->sendResponse($menuItems, "Menu Items listing");
+
+            return $this->sendError("No record Found");
+
+        } catch (\Exception $th) {
+            return $this->sendError($th->getMessage());
+        }
+
     }
 }
